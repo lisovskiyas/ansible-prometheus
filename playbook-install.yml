@@ -1,0 +1,90 @@
+---
+- name: Preconfig
+  hosts: server4
+  become: yes
+
+  tasks:
+    - name: Установка Docker
+      block:
+        - name: Добавляем universe
+          apt_repository:
+            repo: "deb http://archive.ubuntu.com/ubuntu/ {{ ansible_distribution_release }} universe"
+            state: present
+
+        - name: Установка дополнительных пакетов
+          apt:
+            name:
+#              - apt-transport-https
+              - ca-certificates
+              - curl
+              - gnupg
+#              - lsb-release
+            update-cache: yes
+            cache_valid_time: 86400
+          ignore_errors: yes
+#          debugger: on_failed
+        - name: Добавление ключа Docker
+          get_url:
+              url: https://download.docker.com/linux/ubuntu/gpg
+              dest: /etc/apt/keyrings/docker.asc
+              mode: '0644'
+              force: true
+#          apt_key:
+#            url: https://download.docker.com/linux/ubuntu/gpg
+#            state: present
+#            keyring: /etc/apt/keyrings/docker.asc   
+
+#          deb822_repository:
+#            name: docker
+#            types: deb
+#            uris: >
+#              deb [arch=amd64 signed-by=/etc/apt/keyrings/docker.asc]
+#              https://download.docker.com/linux/ubuntu
+#              {{ ansible_distribution_release }}
+#            suites: stable
+#            signed_by: https://download.docker.com/linux/ubuntu/gpg
+
+#          register: out
+#        - debug:
+#              var: out
+
+        - name: Установка стабильного репозитория
+          apt_repository:
+            repo: > # > означает ввод в одну строку
+              deb [arch=amd64 signed-by=/etc/apt/keyrings/docker.asc]
+              https://download.docker.com/linux/ubuntu
+              {{ ansible_distribution_release }} stable
+            state: present
+            update-cache: yes
+            filename: docker
+
+        - name: Установка Docker-ce
+          apt:
+             name:
+               - docker-ce
+               - docker-ce-cli
+               - containerd.io
+               - docker-buildx-plugin
+               - docker-compose-plugin
+             update-cache: yes
+
+        - name: Проверка, что Docker установлен и перезагружен
+          service:
+              name: docker
+              state: restarted
+              enabled: yes
+    - name: Завершение установки
+      block:
+        - name: Создаем группу docker
+          group:
+            name: docker
+            state: present
+
+        - name: Добавляем пользователя в группу Docker
+          ansible.builtin.user:
+            name: "{{ ansible_user_id }}"
+            groups: docker
+            append: true
+        - name: Перезагружаем сервер
+          ansible.builtin.reboot:
+            msg: "Rebooting machine in 5 seconds"

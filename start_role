@@ -1,0 +1,11 @@
+---
+
+- name: Install Prometheus
+  hosts: cluster
+  user: vagrant
+  become: true
+#  become_method: su
+#  become_user: root
+  roles:
+    - role: Prometheus
+      tags: prom
