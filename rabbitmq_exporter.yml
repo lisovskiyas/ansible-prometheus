@@ -1,0 +1,22 @@
+---
+- name: Setup rmq and rmq exporter
+  hosts: my_server
+  gather_facts: no
+
+  tasks:
+    - name: Start a container rmq and use an env 
+      community.docker.docker_container:
+        name: rmq
+        image: rabbitmq:3-management
+        env: 
+          RABBITMQ_NODENAME: my-rabbit
+        ports:
+          - "9419:9419"
+          
+    - name: Start rmq exporter
+      community.docker.docker_container:
+        name: rmq_exporter
+        image: kbudde/rabbitmq-exporter
+        links:
+          - "rmq"
+      
