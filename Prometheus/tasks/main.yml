@@ -1,7 +1,5 @@
 ---
 # tasks file for Prometheus
----
-
 - name: Install Prometheus
   include_tasks: tasks/install_prometheus.yml
 
